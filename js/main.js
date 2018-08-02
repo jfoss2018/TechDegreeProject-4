@@ -1,13 +1,12 @@
-// Start Screen Appears when page loads
-// Play Game button loads the Tic Tac Toe board and starts the game
+
 class Game {
   constructor (player1, player2) {
     this.player1 = player1,
     this.player2 = player2,
     this.move = 0
+    this.gameBoard = [0, 0, 0, 0, 0, 0, 0, 0, 0]
   }
 };
-
 
 const body = document.querySelector('body');
 const boardScreen = document.getElementById('board');
@@ -54,12 +53,32 @@ const message = document.querySelector('.message');
 
 
 const startScreen = document.getElementById('start');
+const startBtnSingle = startScreen.querySelectorAll('.button')[0];
 const startBtn = startScreen.querySelectorAll('.button')[1];
 const playAgainBtn = winScreen.querySelector('.button');
 let game1 = {};
+startBtnSingle.addEventListener('click', (e) => {
+  const player1 = prompt('Please enter Player 1\'s name');
+  const player2 = 'Computer';
+  game1 = new Game(player1, player2);
+  checkActive();
+  player1DivBox.textContent = `Player 1: ${game1.player1}`;
+  player2DivBox.textContent = `Player 2: ${game1.player2}`;
+  startScreen.style.display = 'none';
+  boardScreen.style.display = '';
+});
 startBtn.addEventListener('click', (e) => {
   const player1 = prompt('Please enter Player 1\'s name');
-  const player2 = prompt('Please enter Player 2\'s name');
+  let player2 = '';
+  let counter = 0;
+  do {
+    counter += 1;
+    if (counter > 1) {
+      player2 = prompt('"Computer" is an invalid name. Please enter Player 2\'s name');
+    } else {
+    player2 = prompt('Please enter Player 2\'s name');
+    }
+  } while (player2 === 'Computer');
   game1 = new Game(player1, player2);
   checkActive();
   player1DivBox.textContent = `Player 1: ${game1.player1}`;
@@ -75,7 +94,6 @@ playAgainBtn.addEventListener('click', (e) => {
     listItems[i].classList.remove('box-filled-2');
     listItems[i].style.backgroundImage = '';
   }
-  gameBoard = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 });
 
 const boxes = document.querySelector('.boxes');
@@ -100,35 +118,44 @@ boxes.addEventListener('click', (e) => {
     e.target.style.backgroundImage = "url('img/o.svg')";
     e.target.classList.add('box-filled-1');
     const indexNum = listItems.indexOf(e.target);
-    gameBoard[indexNum] = -1;
+    game1.gameBoard[indexNum] = 1;
     game1.move += 1;
     checkActive();
-    checkWin();
+    displayWin(checkWin());
+    if (game1.player2 === 'Computer' && game1.gameBoard.filter(box => box === 0).length !== 0) {
+      const indexMove = minimax(game1.gameBoard, 1).index;
+      listItems[indexMove].style.backgroundImage = "url('img/x.svg')";
+      listItems[indexMove].classList.add('box-filled-2');
+      game1.gameBoard[indexMove] = 1;
+      game1.move += 1;
+      checkActive();
+      displayWin(checkWin());
+    }
   } else {
     e.target.style.backgroundImage = "url('img/x.svg')";
     e.target.classList.add('box-filled-2');
     const indexNum = listItems.indexOf(e.target);
-    gameBoard[indexNum] = 1;
+    game1.gameBoard[indexNum] = 1;
     game1.move += 1;
     checkActive();
-    checkWin();
+    displayWin(checkWin());
   }
 });
 
-/*function terminalState () {
-  if (
-    gameBoard[0] === gameBoard[3] && gameBoard[0] === gameBoard[6] && gameBoard[0] !== 0 ||
-    gameBoard[1] === gameBoard[4] && gameBoard[1] === gameBoard[7] && gameBoard[1] !== 0 ||
-    gameBoard[2] === gameBoard[5] && gameBoard[2] === gameBoard[8] && gameBoard[2] !== 0 ||
-    gameBoard[0] === gameBoard[1] && gameBoard[0] === gameBoard[2] && gameBoard[0] !== 0 ||
-    gameBoard[3] === gameBoard[4] && gameBoard[3] === gameBoard[5] && gameBoard[3] !== 0 ||
-    gameBoard[6] === gameBoard[7] && gameBoard[6] === gameBoard[8] && gameBoard[6] !== 0 ||
-    gameBoard[0] === gameBoard[4] && gameBoard[0] === gameBoard[8] && gameBoard[0] !== 0 ||
-    gameBoard[2] === gameBoard[4] && gameBoard[2] === gameBoard[6] && gameBoard[2] !== 0
-  ) {
-    console.log('game Over');
+function clickHandling (target, index) {
+  if (game1.move % 2 === 0) {
+    target.style.backgroundImage = "url('img/o.svg')";
+    target.classList.add('box-filled-1');
+    game1.gameBoard[index] = 1;
+    return checkWin();
+  } else {
+    target.style.backgroundImage = "url('img/x.svg')";
+    target.classList.add('box-filled-2');
+    game1.gameBoard[index] = 1;
+    return checkWin();
   }
-}*/
+}
+
 
 function checkWin () {
   function checkLine (cls) {
@@ -148,41 +175,34 @@ function checkWin () {
     }
   }
   if (checkLine('box-filled-1')) {
-    displayWin(1);
+    return 1;
   } else if (checkLine('box-filled-2')) {
-    displayWin(2);
-  } else if(gameBoard.filter(box => box === 0).length === 0) {
-    displayWin(0);
+    return -1;
+  } else if(game1.gameBoard.filter(box => box === 0).length === 0) {
+    return 0;
+  } else {
+    return 2;
   }
 }
 function displayWin (condition) {
-  boardScreen.style.display = 'none';
-  winScreen.style.display = '';
-  if (condition === 1) {
-    winScreen.classList.add('screen-win-one');
-    message.textContent = `Player 1: ${game1.player1} Wins!`
-  } else if (condition === 2) {
-    winScreen.classList.add('screen-win-two');
-    message.textContent = `Player 2: ${game1.player2} Wins!`
-  } else {
-    winScreen.classList.add('screen-win-tie');
-    message.textContent = `Tie Game!`
+  if (condition < 2) {
+    boardScreen.style.display = 'none';
+    winScreen.style.display = '';
+    winScreen.classList.remove('screen-win-one');
+    winScreen.classList.remove('screen-win-two');
+    winScreen.classList.remove('screen-win-tie');
+    if (condition === 1) {
+      winScreen.classList.add('screen-win-one');
+      message.textContent = `Player 1: ${game1.player1} Wins!`
+    } else if (condition === -1) {
+      winScreen.classList.add('screen-win-two');
+      message.textContent = `Player 2: ${game1.player2} Wins!`
+    } else {
+      winScreen.classList.add('screen-win-tie');
+      message.textContent = `Tie Game!`
+    }
   }
 }
-// Game alternates between O and X
-// Active player on the board is identified by highlighting either the X or O
-// On mouseover, empty squares show the players X or O icon
-// Cannot click on already filled squares
-// Ocupied squares are filled with X or O
-// Extra Credit: Player's name appears on the board Screen
-// Extra Credit: There is a Player vs. Computer option
-
-// Game ends if either player has three icons in a row, or the board is full
-// Finish screen appears announcing the winner or a tie.
-// New game button starts a new game with an empty board
-// Extra Credit: Player's name appears if they win
-
-let gameBoard = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 function checkActive () {
   if (game1.move % 2 === 0) {
@@ -194,7 +214,132 @@ function checkActive () {
   }
 }
 
-// game state object
-//    Whose move?
-//    Game Board?
-//    Determine terminal state?
+function minimax (board, player) {
+  const openSpaces = [];
+  for (let i = 0; i < board.length; i += 1) {
+    if (board[i] === 0) {
+      openSpaces.push(i);
+    }
+  }
+  if (checkWin() === 1) {
+    return {score: -10};
+  } else if (checkWin() === -1) {
+    return {score: 10};
+  } else if (checkWin() === 0) {
+    return {score: 0};
+  }
+  let moves = [];
+  for (let i = 0; i < openSpaces.length; i += 1) {
+    let move = {};
+    move.index = openSpaces[i];
+    if (player === 0) {
+      listItems[openSpaces[i]].style.backgroundImage = "url('img/o.svg')";
+      listItems[openSpaces[i]].classList.add('box-filled-1');
+    } else {
+      listItems[openSpaces[i]].style.backgroundImage = "url('img/x.svg')";
+      listItems[openSpaces[i]].classList.add('box-filled-2');
+    }
+    board[openSpaces[i]] = 1;
+    if (player === 1) {
+      let result = minimax(board, 0);
+      move.score = result.score;
+    } else {
+      let result = minimax(board, 1);
+      move.score = result.score;
+    }
+    listItems[openSpaces[i]].style.backgroundImage = "";
+    listItems[openSpaces[i]].classList.remove('box-filled-1');
+    listItems[openSpaces[i]].classList.remove('box-filled-2');
+    board[openSpaces[i]] = 0;
+    moves.push(move);
+  }
+  let bestMove;
+  if (player === 1) {
+    let bestScore = -100;
+    for (let i = 0; i < moves.length; i += 1) {
+      if (moves[i].score > bestScore) {
+        bestScore = moves[i].score;
+        bestMove = i;
+      }
+    }
+  } else {
+    let bestScore = 100;
+    for (let i = 0; i < moves.length; i += 1) {
+      if (moves[i].score < bestScore) {
+        bestScore = moves[i].score;
+        bestMove = i;
+      }
+    }
+  }
+  return moves[bestMove];
+}
+  /*const gameBoardCopy = game1.gameBoard;
+  const gameMoveCopy = game1.move;
+  const whoseTurn = game1.move % 2;
+  const newMoveList = [];
+  function performLoop () {
+    let bestMove = 0;
+    let bestScore = -10;
+    const openSpaces = [];
+    for (let i = 0; i < game1.gameBoard.length; i += 1) {
+      if (game1.gameBoard[i] === 0) {
+        openSpaces.push(i);
+      }
+    }
+    for (let i = 0; i < openSpaces.length; i += 1) {
+      const winNum = clickHandling(listItems[i], i);
+      if (winNum < 2) {
+        const newScore = scorePush(winNum, whoseTurn);
+        if (newScore > bestScore) {
+          bestScore = newScore;
+          newMoveList.push(openSpaces[i]);
+          bestMove = newMoveList.pop();
+          newMoveList = [];
+        }
+      } else {
+        newMoveList.push(openSpaces[i]);
+        game1.move += 1;
+        performLoop();
+      }
+    }
+    count = 0;
+    game1.gameBoard = gameBoardCopy;
+    game1.move = gameMoveCopy;
+    if (whoseTurn === 0) {
+      listItems[bestMove].style.backgroundImage = "url('img/o.svg')";
+      listItems[bestMove].classList.add('box-filled-1');
+      game1.gameBoard[bestMove] = 1;
+      game1.move += 1;
+      checkActive();
+      displayWin(checkWin());
+    } else {
+      listItems[bestMove].style.backgroundImage = "url('img/x.svg')";
+      listItems[bestMove].classList.add('box-filled-2');
+      game1.gameBoard[bestMove] = 1;
+      game1.move += 1;
+      checkActive();
+      displayWin(checkWin());
+    }
+  }
+  performLoop();
+}*/
+
+function scorePush (number, turn) {
+  if (turn === 0) {
+    if (number === 1) {
+      return 1;
+    } else if (number === 0) {
+      return 0;
+    } else if (number === -1) {
+      return -1;
+    }
+  } else if (turn === 1) {
+    if (number === 1) {
+      return -1;
+    } else if (number === 0) {
+      return 0;
+    } else if (number === -1) {
+      return 1;
+    }
+  }
+}
